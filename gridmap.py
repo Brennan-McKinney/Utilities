@@ -1,5 +1,11 @@
 #! /usr/bin/env python
 
+#gridmap.py: Uses the repoman client to take a list of Distinguished Names
+#and unsernames, in the style of '"DN" un' and add them to the users repoman
+#repository.  To use, simply give -f the path to the gridmap file that you wish
+#to turn into users and, optionally, -o the path that you want to redirect
+#output along.
+
 import sys
 
 from cStringIO import StringIO
@@ -40,10 +46,11 @@ for L in f:
     dnmess = ""
     cnmess = ""
     unmess = ""
+    #Using regexps to find DN, common name, and username.
     dn = re.search("^\".*[A-Z,a-z,1-9].*\"", L)
     if dn is not None:
         dn = dn.group(0)
-        cn = re.search("CN=[A-Z,a-z,1-9].+\"", L)
+        cn = re.search("CN=.*[A-Z,a-z,1-9].*\"", L)
         if cn is not None:
             fn = cn.group(0)
             fn = fn[3:]
@@ -57,6 +64,9 @@ for L in f:
                 metadata = dict([("user_name", un), ("email", email), \
                                 ("cert_dn", dn), ("full_name", fn)])
                 try:
+                    #repoman returns some errors, such as username/client_dn
+                    #conflict along stdout. This is designed to catch that out
+                    #and put it into a unique variable
                     if options.outfile != None:
                         old_out = w
                     else:
